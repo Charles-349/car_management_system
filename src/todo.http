@@ -1,0 +1,26 @@
+#Test the base url
+GET  http://localhost:8081
+
+###create customer
+POST  http://localhost:8081/customer
+Content-Type: application/json
+
+{
+  "firstName": "kelvin",
+   "lastName":"mwangi",
+   "email":"kelvin@gmail.com",
+  "phoneNumber": "666-666",
+  "address": "321 Main St, Nairobi, Kenya"
+ }
+
+ ###create car
+POST  http://localhost:8081/car
+Content-Type: application/json
+ {
+   "carModel": "Toyota Corolla", 
+   "year": "2023-01-01", 
+   "color": "Blue", 
+   "rentalRate": "55.00", 
+   "availability": true, 
+   "locationID": 4
+}
