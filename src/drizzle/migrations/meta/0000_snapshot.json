@@ -1,5 +1,5 @@
 {
-  "id": "96aefae8-bf2a-463b-8d54-9e137decdc7b",
+  "id": "a92976ee-b612-41e4-9059-4bbae0949a85",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -178,6 +178,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "Password": {
+          "name": "Password",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
         "PhoneNumber": {
           "name": "PhoneNumber",
           "type": "text",
@@ -189,6 +195,13 @@
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
+        },
+        "Role": {
+          "name": "Role",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'customer'"
         }
       },
       "indexes": {},

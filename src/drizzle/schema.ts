@@ -9,8 +9,11 @@ export const CustomerTable = pgTable("customer", {
     firstName: varchar("FirstName", { length: 50 }).notNull(),
     lastName: varchar("LastName", { length: 50 }).notNull(),
     email: varchar("Email", { length: 100 }).notNull().unique(),
+    password: varchar("Password", { length: 255 }).notNull(), // hashed password
     phoneNumber: text("PhoneNumber"),
-    address: varchar("Address", { length: 255 })
+    address: varchar("Address", { length: 255 }),
+    role : varchar("Role", { length: 20 }).default("customer") // default role is customer
+   
 });
 
 // Location Table

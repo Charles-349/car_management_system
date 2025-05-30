@@ -1,12 +1,31 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import db from "../drizzle/db";
 import { CustomerTable, TICustomer } from "../drizzle/schema";
+import customer from "./customer.router";
 
 
 //create customer
 export const createCustomerService = async (customer:TICustomer) => {
     await db.insert(CustomerTable).values(customer);
     return "Customer created successfully";
+};
+
+//customer login service
+export const customerLoginService = async(customer:TICustomer) => {
+    const { email } = customer;
+    return await db.query.CustomerTable.findFirst({
+        columns: {
+            customerID: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            password: true,
+            phoneNumber: true,
+            address: true,
+            role: true
+        },
+        where: sql`${CustomerTable.email} = ${email}`
+    });
 };
 //get customer
 export const getCustomerService = async()=> {

@@ -19,11 +19,11 @@ async function seed() {
 
     // insert customers
     await db.insert(CustomerTable).values([
-        { firstName: "John", lastName: "Doe", email: "john@example.com", phoneNumber: "555-1234", address: "1 Elm St" },
-        { firstName: "Jane", lastName: "Smith", email: "jane@example.com", phoneNumber: "555-5678", address: "2 Maple Ave" },
-        { firstName: "Alice", lastName: "Johnson", email: "alice@example.com", phoneNumber: "555-8765", address: "3 Oak Dr" },
-        { firstName: "Bob", lastName: "Brown", email: "bob@example.com", phoneNumber: "555-4321", address: "4 Birch Ln" },
-        { firstName: "Charlie", lastName: "Miller", email: "charlie@example.com", phoneNumber: "555-9999", address: "5 Cedar Rd" },
+        { firstName: "John", lastName: "Doe", email: "john@example.com", phoneNumber: "555-1234", address: "1 Elm St",password: "password123" },
+        { firstName: "Jane", lastName: "Smith", email: "jane@example.com", phoneNumber: "555-5678", address: "2 Maple Ave", password: "password124" },
+        { firstName: "Alice", lastName: "Johnson", email: "alice@example.com", phoneNumber: "555-8765", address: "3 Oak Dr", password: "password125" },
+        { firstName: "Bob", lastName: "Brown", email: "bob@example.com", phoneNumber: "555-4321", address: "4 Birch Ln" , password: "password126" },
+        { firstName: "Charlie", lastName: "Miller", email: "charlie@example.com", phoneNumber: "555-9999", address: "5 Cedar Rd" , password: "password127" },
     ]);
 
     // insert cars

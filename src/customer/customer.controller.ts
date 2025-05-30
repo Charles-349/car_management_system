@@ -1,11 +1,20 @@
 import { Request, Response } from "express";
-import {createCustomerService,deleteCustomerService, getCustomerService,updateCustomerService, getCustomerByIdService} from "./customer.service";
+import {createCustomerService,customerLoginService ,deleteCustomerService, getCustomerService,updateCustomerService, getCustomerByIdService} from "./customer.service";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import"dotenv/config";
 
 //create customer controller
 export const createCustomerController = async (req: Request, res: Response) => {
     try {
         const customer = req.body;
+        const password = customer.password;
+        if (!password || password.length < 6) {
+            return res.status(400).json({ message: "Password must be at least 6 characters long" });
+        }
+        // Hash the password before saving
+        const hashedPassword = await bcrypt.hash(password, 10);
+        customer.password = hashedPassword;
         const createCustomer = await createCustomerService(customer);
         if(!createCustomer) return res.json({message: "customer not created"})
         return res.status(201).json({
@@ -17,6 +26,56 @@ export const createCustomerController = async (req: Request, res: Response) => {
             message: error.message});
     
         
+    }
+};
+
+//customer login controller
+export const customerLoginController = async (req: Request, res: Response) => {
+    try {
+        const customer = req.body;
+//check if user exists
+        const customerExist = await customerLoginService(customer);
+        if (!customerExist) {
+            return res.status(404).json({ message: "customer not found" });
+        }
+        //verify password
+        const customerMatch = await bcrypt.compare(customer.password, customerExist.password);
+        if (!customerMatch) {
+            return res.status(401).json({ message: "Invalid credentials" });
+        }
+        //create a payload for JWT
+        const payload = {
+            sub : customerExist.customerID,
+            customerID: customerExist.customerID,
+            firstName: customerExist.firstName,
+            lastName: customerExist.lastName,
+            email: customerExist.email,
+            phoneNumber: customerExist.phoneNumber,
+            address: customerExist.address,
+            role: customerExist.role,
+            exp : Math.floor(Date.now() / 1000) + 60  // 1 minute expiration
+        };
+        //generate JWT token
+        const secret = process.env.JWT_SECRET_KEY as string;
+        if (!secret) {
+            throw new Error("JWT secret is not defined in the environment variables");
+        }
+        const token = jwt.sign(payload, secret);
+        return res.status(200).json({
+            message: "Login successful",
+            token,
+            customer: {
+                customerID: customerExist.customerID,
+                firstName: customerExist.firstName,
+                lastName: customerExist.lastName,
+                email: customerExist.email,
+                phoneNumber: customerExist.phoneNumber,
+                address: customerExist.address,
+                role: customerExist.role
+            }
+        });
+    } catch (error: any) {
+        return res.status(500).json({message:error.message});
     }
 };
 export const getCustomerController = async (req: Request, res: Response) => {
