@@ -8,6 +8,20 @@
       "when": 1748637018805,
       "tag": "0000_dizzy_toad",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1748799800860,
+      "tag": "0001_nifty_rattler",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1748863684673,
+      "tag": "0002_outstanding_the_spike",
+      "breakpoints": true
     }
   ]
 }

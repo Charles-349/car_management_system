@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
-import {createBookingService,deleteBookingService,getBookingByIdService,updateBookingService, getBookingsService} from "./booking.service";
+import {createBookingService,deleteBookingService,getBookingByIdService, getBookingByCustomerIdService,updateBookingService, getBookingsService} from "./booking.service";
+import { BookingsTable } from "../drizzle/schema";
 
 // Create booking controller
 export const createBookingController = async (req: Request, res: Response) => {
@@ -47,6 +48,23 @@ export const getBookingByIdController = async (req: Request, res: Response) => {
         return res.status(500).json({ message: "Internal server error", error: error.message });
     }
 }
+
+// Get bookings by customer ID controller
+export const getBookingByCustomerIdController = async (req: Request, res: Response) => {
+    try {
+        const customerId = parseInt(req.params.customerId);
+        if (isNaN(customerId)) {
+            return res.status(400).json({ message: "Invalid customer ID" });
+        }
+        const bookings = await getBookingByCustomerIdService(customerId);
+        if (!bookings || bookings.length === 0) {
+            return res.status(404).json({ message: "No bookings found for this customer" });
+        }
+        return res.status(200).json({ message: "Bookings retrieved successfully", bookings });
+    } catch (error: any) {
+        return res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+}
 // // Update booking controller
 export const updateBookingController = async (req: Request, res: Response) => {
     try {
@@ -63,7 +81,7 @@ export const updateBookingController = async (req: Request, res: Response) => {
         if (!updatedBooking) {
             return res.status(404).json({ message: "Booking not updated" });
         }
-        return res.status(200).json({ message: "Booking updated successfully", updatedBooking });
+        return res.status(200).json({ message: "Booking updated successfully", booking });
     } catch (error: any) {
         return res.status(500).json({ message: "Internal server error", error: error.message });
     }

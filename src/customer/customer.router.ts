@@ -1,10 +1,19 @@
 import { Express } from "express";
-import { createCustomerController,customerLoginController,deleteCustomerController,updateCustomerController, getCustomerController, getCustomerByIdController } from "./customer.controller";
+import { createCustomerController,verifyCustomerController,customerLoginController,deleteCustomerController,updateCustomerController, getCustomerController, getCustomerByIdController } from "./customer.controller";
 
 const customer = (app: Express) => {
     app.route("/customer").post(async (req, res, next) => {
         try {
             await createCustomerController(req, res);
+        } catch (error) {
+            next(error);
+        }
+    }
+    )
+    //verify customer route
+    app.route("/customer/verify").post(async (req, res, next) => {
+        try {
+            await verifyCustomerController(req, res);
         } catch (error) {
             next(error);
         }

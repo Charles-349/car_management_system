@@ -1,9 +1,11 @@
 import { Express } from "express";
-import {createBookingController,deleteBookingController,updateBookingController,getBookingByIdController, getBookingsController } from "./booking.controller";
+import {createBookingController,deleteBookingController,updateBookingController, getBookingByCustomerIdController,getBookingByIdController, getBookingsController } from "./booking.controller";
+import { adminRoleAuth,userRoleAuth,bothRoleAuth } from "../middleware/bearAuth";
 
 // Create booking router
 const booking = (app: Express) => {
-    app.route("/booking").post(async (req, res, next) => {
+    app.route("/booking").post(bothRoleAuth,async (req, res, next) => {
+        
         try {
             await createBookingController(req, res);
         } catch (error) {
@@ -11,7 +13,8 @@ const booking = (app: Express) => {
         }
     });
     // Get all bookings
-    app.route("/booking").get(async (req, res, next) => {
+    app.route("/booking").get( adminRoleAuth,async (req, res, next) => {
+       
         try {
             await getBookingsController(req, res);
         } catch (error) {
@@ -20,7 +23,8 @@ const booking = (app: Express) => {
     }
     );
     // Get booking by ID
-    app.route("/booking/:id").get(async (req, res, next) => {
+    app.route("/booking/:id").get(bothRoleAuth,async (req, res, next) => {
+        
         try {
             await getBookingByIdController(req, res);
         } catch (error) {
@@ -28,9 +32,19 @@ const booking = (app: Express) => {
         }
     }
     );
+    // Get bookings by customer ID
+    app.route("/booking/customer/:customerId").get(userRoleAuth,async (req, res, next) => {
+      
+        try {
+            await getBookingByCustomerIdController(req, res);
+        } catch (error) {
+            next(error);
+        }
+    });
     // Update booking by ID
 
-    app.route("/booking/:id").put(async (req, res, next) => {
+    app.route("/booking/:id").put(adminRoleAuth,async (req, res, next) => {
+        
         try {
             await updateBookingController(req, res);
         } catch (error) {
@@ -39,7 +53,8 @@ const booking = (app: Express) => {
     });
 
     // Delete booking by ID
-    app.route("/booking/:id").delete(async (req, res, next) => {
+    app.route("/booking/:id").delete(adminRoleAuth,async (req, res, next) => {
+    
         try {
             await deleteBookingController(req, res);
         } catch (error) {

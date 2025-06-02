@@ -9,6 +9,19 @@ export const createCustomerService = async (customer:TICustomer) => {
     await db.insert(CustomerTable).values(customer);
     return "Customer created successfully";
 };
+export const getCustomerByEmailService = async (email: string) => {
+    return await db.query.CustomerTable.findFirst({
+        where: sql`${CustomerTable.email} = ${email}`
+
+    });
+};
+
+    
+export const verifyCustomerService=async (email: string) => {
+    await db.update(CustomerTable)
+        .set({ isVerified: true, verificationCode: null })
+        .where(sql`${CustomerTable.email} = ${email}`);
+} 
 
 //customer login service
 export const customerLoginService = async(customer:TICustomer) => {
@@ -27,6 +40,7 @@ export const customerLoginService = async(customer:TICustomer) => {
         where: sql`${CustomerTable.email} = ${email}`
     });
 };
+
 //get customer
 export const getCustomerService = async()=> {
     const customer = await db.query.CustomerTable.findMany();

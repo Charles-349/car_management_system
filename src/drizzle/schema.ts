@@ -1,7 +1,12 @@
 
-import { relations } from "drizzle-orm";
+import { is, relations } from "drizzle-orm";
+import { pgEnum } from "drizzle-orm/pg-core";
 import { text, varchar, serial, pgTable, decimal, integer, boolean, date } from "drizzle-orm/pg-core";
 
+
+export const RoleEnum = pgEnum("role", [
+    "admin",
+    "user"]);
 
 // customer table
 export const CustomerTable = pgTable("customer", {
@@ -12,7 +17,9 @@ export const CustomerTable = pgTable("customer", {
     password: varchar("Password", { length: 255 }).notNull(), // hashed password
     phoneNumber: text("PhoneNumber"),
     address: varchar("Address", { length: 255 }),
-    role : varchar("Role", { length: 20 }).default("customer") // default role is customer
+    role: RoleEnum("Role").default("user") ,// default role is user
+    isVerified: boolean("is_verified").default(false), // to check if the user is verified  
+    verificationCode:varchar("verification_code", { length: 10 }) // to store the verification code sent to the user  
    
 });
 
