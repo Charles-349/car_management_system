@@ -59,7 +59,7 @@ export const updateMaintenanceController = async (req: Request, res: Response) =
         if (!updatedMaintenance) {
             return res.status(404).json({ message: "Maintenance record not updated" });
         }
-        return res.status(200).json({ message: "Maintenance record updated successfully", updatedMaintenance });
+        return res.status(200).json({ message:updatedMaintenance });
     } catch (error: any) {
         return res.status(500).json({ message: "Internal server error", error: error.message });
     }

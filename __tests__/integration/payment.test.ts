@@ -3,39 +3,33 @@ import request from "supertest";
 import app from "../../src/index";
 import db from "../../src/drizzle/db";
 import { BookingsTable, PaymentTable, CarTable } from "../../src/drizzle/schema";
+import { eq } from "drizzle-orm";
 
 let bookingId: number;
-let paymentId: number;
+let paymentId: number
 
 
-// const testCar = {
-//    carModel: "Toyota Corolla", 
-//    year: "2020-01-01", 
-//    color: "Red", 
-//    rentalRate: "50.00", 
-//    availability: true, 
-//    locationID: 1 
-// }
+
+const bookingTest ={
+  carID:1,
+  customerID:1,
+  rentalStartDate:'2025-3-4',
+  rentalEndDate:'2025-01-01',
+  totalAmount:'4000.00'
+
+}
 
 beforeAll(async () => {
-    // const [car] = await db.insert(CarTable).values({
-    //     ...testCar,
-    // }).returning();
-    // carID = car.carID;
-  // Create a valid booking to associate with a payment
+    
   const [booking] = await db.insert(BookingsTable).values({
-    carID: 1,
-    customerId: 1, // Change to match the actual property name in your schema (e.g., customerId or userId)
-    rentalStartDate: new Date(),
-    rentalEndDate: new Date(),
-    totalAmount: 500
+    ...bookingTest
   }).returning();
   bookingId = booking.bookingID;
 });
 
 afterAll(async () => {
-  await db.delete(PaymentTable);
-  await db.delete(BookingsTable);
+  await db.delete(PaymentTable).where(eq(PaymentTable.paymentID,paymentId));
+  await db.delete(BookingsTable).where(eq(BookingsTable.bookingID,bookingId));
   await db.$client.end();
 });
 

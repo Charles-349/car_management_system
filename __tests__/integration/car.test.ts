@@ -13,16 +13,18 @@ const validCar = {
   locationID: 1
 };
 
-let carID: number;
+let carId: number;
 
 beforeAll(async () => {
  
-  const [car] = await db.insert(CarTable).values(validCar).returning();
-  carID = car.carID;
+  const [car] = await db.insert(CarTable).values({
+    ...validCar
+  }).returning();
+  carId = car.carID;
 });
 
 afterAll(async () => {
-  await db.delete(CarTable).where(eq(CarTable.carID, carID));
+  await db.delete(CarTable).where(eq(CarTable.carID, carId));
   await db.$client.end();
 });
 
@@ -58,7 +60,7 @@ describe("Car Controller Integration Tests", () => {
 
   describe("GET /car/:id", () => {
     it("should return a single car by ID", async () => {
-      const res = await request(app).get(`/car/${carID}`);
+      const res = await request(app).get(`/car/${carId}`);
 
       expect(res.statusCode).toBe(200);
       expect(res.body).toHaveProperty("message", "Car retrieved successfully");
@@ -82,7 +84,7 @@ describe("Car Controller Integration Tests", () => {
 
   describe("PUT /car/:id", () => {
     it("should update an existing car", async () => {
-      const res = await request(app).put(`/car/${carID}`).send({
+      const res = await request(app).put(`/car/${carId}`).send({
         carModel: "Toyota Camry",
         year: "2021-01-01",
         color: "Black",

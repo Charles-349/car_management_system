@@ -33,8 +33,10 @@ export const updateReservationService = async (id: number, reservation: TIReserv
     if (updatedReservation.length === 0) {
         return null;
     }
-    return "Reservation updated successfully";
+
+    return updatedReservation[0]; 
 }
+
 //delete reservation
 export const deleteReservationService = async (id: number) => {
     const deletedReservation = await db.delete(ReservationTable)

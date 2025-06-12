@@ -1,39 +1,83 @@
 import request from "supertest";
 import app from "../../src/index";
 import db from "../../src/drizzle/db";
-import { BookingsTable, ReservationTable } from "../../src/drizzle/schema";
+import { BookingsTable, CarTable, CustomerTable, LocationTable, ReservationTable } from "../../src/drizzle/schema";
 
 let bookingId: number;
 let reservationId: number;
+let carId:number
+let customerId:number;
+
+
+const customerTest={
+
+     firstName: "John",
+      lastName: "Doe", 
+      email: "john@example.com", 
+      phoneNumber: "555-1234",
+       address: "1 Elm St",
+       password: "password123" 
+
+}
+
+
+const carTest={
+    carModel: "Toyota Corolla", 
+      year: "2020-01-01", 
+      color: "Red", 
+      rentalRate: "50.00", 
+      availability: true, 
+      locationID: 1 
+
+}
+const reservationTest = {
+ customerID: 1, 
+  carID: 1, 
+  reservationDate: "2024-06-01", 
+  pickupDate: "2024-06-05", 
+  returnDate: "2024-06-10" 
+};
 
 beforeAll(async () => {
   // Insert a mock booking (needed for FK)
-  const [booking] = await db.insert(BookingsTable).values({
-    carId: 1,
-    customerID: 1,
-    rentalStartDate: new Date(),
-    rentalEndDate: new Date(),
-    totalAmount: 300,
+  const [car] = await db.insert(CarTable).values({
+    ...carTest
+    
   }).returning();
-  bookingId = booking.bookingID;
+  carId = car.carID;
+
+
+  const [customer] = await db.insert(CustomerTable).values({
+    ...customerTest
+
+}).returning()
+customerId=customer.customerID
 });
+// const [reservation] = await db.insert(LocationTable).values({
+//   ...reservationTest
+// }).returning();
+// reservationId = reservation.reservationID
+
+
+
+
+
 
 afterAll(async () => {
   await db.delete(ReservationTable);
-  await db.delete(BookingsTable);
+  await db.delete(CustomerTable);
+  await db.delete(CarTable);
   await db.$client.end();
 });
 
 describe("Reservation Integration Tests", () => {
   it("should create a reservation", async () => {
     const res = await request(app).post("/reservation").send({
-      bookingID: bookingId,
-      reservationDate: new Date().toISOString(),
-      status: "confirmed",
+     ...reservationTest
     });
 
     expect(res.status).toBe(201);
-    expect(res.body.bookingID).toBe(bookingId);
+    
     reservationId = res.body.reservationID;
   });
 
@@ -75,7 +119,6 @@ describe("Reservation Integration Tests", () => {
 
   it("should return 400 for invalid ID when updating", async () => {
     const res = await request(app).put("/reservation/invalid").send({
-      status: "pending"
     });
 
     expect(res.status).toBe(400);
