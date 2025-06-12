@@ -8,3 +8,4 @@ authData.ts
 BasicUtils.ts
 BasicUtils.test.ts
 todo.http
+coverage
