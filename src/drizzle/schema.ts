@@ -1,7 +1,7 @@
 
 import { is, relations } from "drizzle-orm";
 import { pgEnum } from "drizzle-orm/pg-core";
-import { text, varchar, serial, pgTable, decimal, integer, boolean, date } from "drizzle-orm/pg-core";
+import { text, varchar, serial, pgTable, decimal, integer, boolean, date, timestamp } from "drizzle-orm/pg-core";
 
 
 export const RoleEnum = pgEnum("role", [
@@ -19,7 +19,8 @@ export const CustomerTable = pgTable("customer", {
     address: varchar("Address", { length: 255 }),
     role: RoleEnum("Role").default("user") ,// default role is user
     isVerified: boolean("is_verified").default(false), // to check if the user is verified  
-    verificationCode:varchar("verification_code", { length: 10 }) // to store the verification code sent to the user  
+    verificationCode:varchar("verification_code", { length: 10 }), // to store the verification code sent to the user  
+    verificationCodeExpiresAt: timestamp("verification_code_expires_at", { mode: "date" })
    
 });
 
@@ -96,10 +97,11 @@ export const InsuranceTable = pgTable("insurance", {
 
 // RELATIONSHIPS
 
-// CustomerTable Relationships - 1 customer can have many reservations and bookings
+// CustomerTable Relationships - 1 customer can have many reservations and bookings 
 export const CustomerRelations = relations(CustomerTable, ({ many }) => ({
     reservations: many(ReservationTable),
     bookings: many(BookingsTable)
+    
 }))
 
 // LocationTable Relationships -  1 location can have many cars

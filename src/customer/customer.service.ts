@@ -23,6 +23,20 @@ export const verifyCustomerService=async (email: string) => {
         .where(sql`${CustomerTable.email} = ${email}`);
 } 
 
+export const updateVerificationCodeService = async (
+    email: string,
+    verificationCode: string,
+    expirationTime: Date
+) => {
+    await db.update(CustomerTable)
+        .set({
+            verificationCode,
+            verificationCodeExpiresAt: expirationTime
+        })
+        .where(sql`${CustomerTable.email} = ${email}`);
+};
+
+
 //customer login service
 export const customerLoginService = async(customer:TICustomer) => {
     const { email } = customer;
@@ -54,6 +68,42 @@ export const getCustomerByIdService = async (id: number) => {
     return customer;
 };
 
+// customer with bookings
+export const getCustomerWithBookings = async (id: number) => {
+    return await db.query.CustomerTable.findFirst({
+        where: eq(CustomerTable.customerID, id),
+        with: {
+            bookings: {
+                columns: {
+                    carID: true,
+                    rentalStartDate: true,
+                    rentalEndDate: true,
+                    totalAmount: true
+                }
+            }
+        }
+    })
+}
+export const getCustomersWithPaymentsAndBookingsService = async () => {
+    return await db.query.CustomerTable.findMany({
+        with: {
+        
+            bookings: {
+                 columns: {
+                    carID: true,
+                    rentalStartDate: true,
+                    rentalEndDate: true,
+                    totalAmount: true
+                },
+                with: {
+                    payments:true
+                }
+            }
+        }
+    });
+};
+
+
 //update customer
 export const updateCustomerService = async (id: number, customer: TICustomer) => {
     const updatedCustomer = await db.update(CustomerTable)
@@ -77,4 +127,42 @@ export const deleteCustomerService = async (id: number) => {
         return null;
     }
     return "Customer deleted successfully";
+};
+export const getCustomerWithReservationsService = async (id: number) => {
+    return await db.query.CustomerTable.findFirst({
+        where: eq(CustomerTable.customerID, id),
+        with: {
+            reservations: {
+                columns: {
+                    reservationID:true,
+                    customerID: true,
+                    carID: true,
+                    reservationDate: true,
+                    pickupDate:true,
+                    returnDate:true
+                    
+                }
+            }
+        }
+    });
+};
+
+export const getCustomersWithPaymentsAndBookingsServiceById = async (id: number) => {
+    return await db.query.CustomerTable.findFirst({
+        where: eq(CustomerTable.customerID, id),
+        with: {
+        
+            bookings: {
+                 columns: {
+                    carID: true,
+                    rentalStartDate: true,
+                    rentalEndDate: true,
+                    totalAmount: true
+                },
+                with: {
+                    payments:true
+                }
+            }
+        }
+    });
 };

@@ -33,7 +33,7 @@ const booking = (app: Express) => {
     }
     );
     // Get bookings by customer ID
-    app.route("/booking/customer/:customerId").get(userRoleAuth,async (req, res, next) => {
+    app.route("/booking/customer/:customerId").get(bothRoleAuth,async (req, res, next) => {
       
         try {
             await getBookingByCustomerIdController(req, res);
@@ -43,7 +43,7 @@ const booking = (app: Express) => {
     });
     // Update booking by ID
 
-    app.route("/booking/:id").put(adminRoleAuth,async (req, res, next) => {
+    app.route("/booking/:id").put(bothRoleAuth,async (req, res, next) => {
         
         try {
             await updateBookingController(req, res);

@@ -4,10 +4,12 @@ import car from "./car/car.router";
 import payment from "./payment/payment.router";
 import booking from "./booking/booking.router";
 import location from "./location/location.router";
+import insurance from './insurance/insurance.router';
+import maintenance from './maintenance/maintenance.router';
+import reservation from './reservation/reservation.router';
 
 
-
-
+const initializeApp = ()=>{
 const app = express();
 
 //middleware
@@ -19,11 +21,18 @@ car(app);
 payment(app);
 booking(app);
 location(app);
+insurance(app);
+maintenance(app);
+reservation(app);
 app.get('/', (req, res) => {
     res.send('Welcome to the Car Rental API');
 }
 )
+return app
 
-app.listen(8081, ()=>{
-    console.log("server running on http://localhost:8081");
-})
+}
+const app = initializeApp()
+export default app;
+
+
+

@@ -1,0 +1,1 @@
+ALTER TABLE "customer" ADD COLUMN "verification_code_expires_at" timestamp;

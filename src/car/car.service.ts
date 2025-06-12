@@ -23,6 +23,7 @@ export const getCarService = async () => {
     const cars = await db.query.CarTable.findMany();
     return cars;
 }
+
 //update car
 export const updateCarService = async (id: number, car: TICar) => {
     const updatedCar = await db.update(CarTable)

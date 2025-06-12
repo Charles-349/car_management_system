@@ -3,3 +3,8 @@ node_modules
 dist
 
 .env
+
+authData.ts
+BasicUtils.ts
+BasicUtils.test.ts
+todo.http

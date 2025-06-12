@@ -10,7 +10,10 @@ export const createBookingController = async (req: Request, res: Response) => {
     if(!createBooking) 
         return res.status(500).json({ message: "Failed to create booking" });
         return res.status(201).json({
-            message: "Booking created successfully"});
+            message: "Booking created successfully",
+            booking: createBooking,
+        });
+            
     
     
    } catch (error:any) {
