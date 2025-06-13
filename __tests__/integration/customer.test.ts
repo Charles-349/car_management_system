@@ -1,7 +1,7 @@
 import request from 'supertest';
-import  app  from '../../src/index'; // Adjust path to your app instance
-import  db  from '../../src/drizzle/db'; // Adjust path to Drizzle DB instance
-import { CustomerTable } from '../../src/drizzle/schema'; // Adjust path to schema
+import  app  from '../../src/index'; 
+import  db  from '../../src/drizzle/db'; 
+import { CustomerTable } from '../../src/drizzle/schema'; 
 import { eq } from 'drizzle-orm';
 import { sendEmail } from '../../src/mailer/mailer'; // Mocked sendEmail
 import bcrypt from 'bcrypt';
