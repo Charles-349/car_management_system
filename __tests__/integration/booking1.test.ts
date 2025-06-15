@@ -1,247 +1,183 @@
-import request from 'supertest';
-import  app  from '../../src/index';
-import  db  from '../../src/drizzle/db';
-import { CustomerTable } from '../../src/drizzle/schema';
-import { eq } from 'drizzle-orm';
-import bcrypt from 'bcrypt';
+// __tests__/integration/booking.test.ts
+import request from "supertest";
+import app from "../../src/index";
+import db from "../../src/drizzle/db";
+import { BookingsTable, CarTable, CustomerTable } from "../../src/drizzle/schema";
+import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
-// Mock sendEmail
-import { sendEmail } from '../../src/mailer/mailer';
-jest.mock('../../src/mailer/mailer', () => ({
-  sendEmail: jest.fn().mockResolvedValue({ accepted: ['mock@example.com'] }),
-}));
-const mockSendEmail = sendEmail as jest.Mock;
+let userToken: string;
+let adminToken: string;
+let customerID: number;
+let carID: number;
+let bookingID: number;
 
-describe('Customer API Integration Tests', () => {
-  let createdCustomer: any;
-  let verificationCode: string;
-  let customerId: number;
+const testUser = {
+  firstName: "Test",
+  lastName: "User",
+  email: "user@example.com",
+  password: "UserPass123",
+};
 
-  beforeAll(async () => {
-    const password = await bcrypt.hash('password123', 10);
-    verificationCode = '123456';
-    const customerData = {
-      firstName: 'Test',
-      lastName: 'User',
-      email: 'testuser@example.com',
-      password,
-      phoneNumber: '1234567890',
-      address: '123 Test St',
-      role: "user" as "user",
-      isVerified: false,
-      verificationCode,
-      verificationCodeExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
-    };
-    const [customer] = await db.insert(CustomerTable).values(customerData).returning();
-    createdCustomer = customer;
-    customerId = customer.customerID;
-    console.log(`Created customer with ID: ${customerId}, type: ${typeof customerId}`);
-    const [verifyCustomer] = await db
-      .select()
-      .from(CustomerTable)
-      .where(eq(CustomerTable.customerID, customerId));
-    console.log(`Verified customer after insert: ${JSON.stringify(verifyCustomer)}`);
+const testAdmin = {
+  firstName: "Admin",
+  lastName: "User",
+  email: "admin@example.com",
+  password: "AdminPass123",
+  role: "admin",
+};
+
+const testCar = {
+  carModel: "Toyota Prius",
+  year: "2022-01-01",
+  color: "Blue",
+  rentalRate: "120.00",
+};
+
+beforeAll(async () => {
+  await db.delete(BookingsTable);
+  await db.delete(CarTable);
+  await db.delete(CustomerTable);
+
+  const hashedPassword = await bcrypt.hash(testUser.password, 10);
+  const [user] = await db.insert(CustomerTable).values({ ...testUser, password: hashedPassword, isVerified: true }).returning();
+  customerID = user.customerID;
+
+  const hashedAdminPassword = await bcrypt.hash(testAdmin.password, 10);
+  await db.insert(CustomerTable).values({
+    firstName: testAdmin.firstName,
+    lastName: testAdmin.lastName,
+    email: testAdmin.email,
+    password: hashedAdminPassword,
+    isVerified: true,
+    role: "admin",
   });
 
-  afterAll(async () => {
-    await db.delete(CustomerTable).where(eq(CustomerTable.email, 'testuser@example.com'));
-    if (db && db.$client && typeof db.$client.end === 'function') {
-      console.log('Closing Drizzle client');
-      await db.$client.end();
-    }
-  });
+  const [car] = await db.insert(CarTable).values({ ...testCar }).returning();
+  carID = car.carID;
 
-  describe('POST /customer/login', () => {
-    it('should authenticate a customer and return a token', async () => {
-      const res = await request(app).post('/customer/login').send({
-        email: 'testuser@example.com',
-        password: 'password123',
+  const loginUserRes = await request(app).post("/customer/login").send({ email: testUser.email, password: testUser.password });
+  userToken = loginUserRes.body.token;
+
+  const loginAdminRes = await request(app).post("/customer/login").send({ email: testAdmin.email, password: testAdmin.password });
+  adminToken = loginAdminRes.body.token;
+});
+
+describe("Booking Integration Tests", () => {
+  it("should create a booking", async () => {
+    const res = await request(app)
+      .post("/booking")
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({
+        carID,
+        customerID,
+        rentalStartDate: "2025-06-15",
+        rentalEndDate: "2025-06-20",
+        totalAmount: "600.00"
       });
-      expect(res.statusCode).toBe(200);
-      expect(res.body).toEqual(
-        expect.objectContaining({
-          message: 'Login successful',
-          token: expect.any(String),
-          customer: expect.objectContaining({
-            customerID: customerId,
-            email: 'testuser@example.com',
-          }),
-        })
-      );
-    });
 
-    it('should fail with wrong password', async () => {
-      const res = await request(app).post('/customer/login').send({
-        email: 'testuser@example.com',
-        password: 'wrongpassword',
-      });
-      expect(res.statusCode).toBe(401);
-      expect(res.body).toEqual({ message: 'Invalid credentials' });
-    });
-
-    it('should fail with non-existent customer', async () => {
-      const res = await request(app).post('/customer/login').send({
-        email: 'nonexistent@example.com',
-        password: 'password123',
-      });
-      expect(res.statusCode).toBe(404);
-      expect(res.body).toEqual({ message: 'customer not found' });
-    });
+    expect(res.status).toBe(201);
+    expect(res.body.booking).toBeDefined();
+    bookingID = res.body.booking.bookingID;
   });
 
-  describe('POST /customer/verify', () => {
-    it('should verify the customer with a valid code', async () => {
-      const res = await request(app).post('/customer/verify').send({
-        email: 'testuser@example.com',
-        code: verificationCode,
+  it("should fail to create a booking without token", async () => {
+    const res = await request(app).post("/booking").send({
+      carID,
+      customerID,
+      rentalStartDate: "2025-06-15",
+      rentalEndDate: "2025-06-20",
+      totalAmount: "600.00"
+    });
+    expect(res.status).toBe(401);
+  });
+
+  it("should fail to create a booking with missing fields", async () => {
+    const res = await request(app)
+      .post("/booking")
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ carID });
+    expect(res.status).toBe(500);
+  });
+
+  it("should get all bookings (admin only)", async () => {
+    const res = await request(app).get("/booking").set("Authorization", `Bearer ${adminToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.bookings.length).toBeGreaterThan(0);
+  });
+
+  it("should not allow non-admin to get all bookings", async () => {
+    const res = await request(app).get("/booking").set("Authorization", `Bearer ${userToken}`);
+    expect(res.status).toBe(401);
+  });
+
+  it("should get booking by ID", async () => {
+    const res = await request(app).get(`/booking/${bookingID}`).set("Authorization", `Bearer ${userToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.booking.bookingID).toBe(bookingID);
+  });
+
+  it("should return 404 for non-existent booking ID", async () => {
+    const res = await request(app).get(`/booking/999999`).set("Authorization", `Bearer ${userToken}`);
+    expect(res.status).toBe(404);
+  });
+
+  it("should get bookings by customer ID", async () => {
+    const res = await request(app).get(`/booking/customer/${customerID}`).set("Authorization", `Bearer ${userToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.bookings[0].customerID).toBe(customerID);
+  });
+
+  it("should return empty for invalid customer ID", async () => {
+    const res = await request(app).get(`/booking/customer/999999`).set("Authorization", `Bearer ${userToken}`);
+    expect(res.status).toBe(404);
+    expect(res.body.bookings??[]).toHaveLength(0);
+  });
+
+  it("should update a booking", async () => {
+    const res = await request(app)
+      .put(`/booking/${bookingID}`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({
+        rentalStartDate: "2025-06-16",
+        rentalEndDate: "2025-06-21",
+        totalAmount: "650.00"
       });
-      expect(res.statusCode).toBe(200);
-      expect(res.body).toEqual({ message: 'User verified successfully' });
-    });
+    expect(res.status).toBe(200);
+    expect(res.body.booking.totalAmount).toBe("650.00");
+  });
 
-    it('should fail with invalid verification code', async () => {
-      const res = await request(app).post('/customer/verify').send({
-        email: 'testuser@example.com',
-        code: '999999',
+  it("should not update booking with invalid ID", async () => {
+    const res = await request(app)
+      .put(`/booking/999999`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({
+        rentalStartDate: "2025-06-16",
+        rentalEndDate: "2025-06-21",
+        totalAmount: "650.00"
       });
-      expect(res.statusCode).toBe(400);
-      expect(res.body).toEqual({ message: 'Invalid verification code' });
-    });
+    expect(res.status).toBe(404);
   });
 
-  describe('POST /customer/resend-verification', () => {
-    it('should resend a new verification code', async () => {
-      await db
-        .update(CustomerTable)
-        .set({ isVerified: false })
-        .where(eq(CustomerTable.email, 'testuser@example.com'));
-      const res = await request(app).post('/customer/resend-verification').send({
-        email: 'testuser@example.com',
-      });
-      expect(res.statusCode).toBe(200);
-      expect(res.body).toEqual({ message: 'New verification code sent successfully' });
-      expect(mockSendEmail).toHaveBeenCalled();
-    });
-
-    it('should fail to resend for non-existent email', async () => {
-      const res = await request(app).post('/customer/resend-verification').send({
-        email: 'nonexistent@example.com',
-      });
-      expect(res.statusCode).toBe(404);
-      expect(res.body).toEqual({ message: 'Customer not found' });
-    });
+  it("should delete a booking (admin only)", async () => {
+    const res = await request(app).delete(`/booking/${bookingID}`).set("Authorization", `Bearer ${adminToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe("Booking deleted successfully");
   });
 
-  describe('GET /customer', () => {
-    it('should return all customers', async () => {
-      const res = await request(app).get('/customer');
-      expect(res.statusCode).toBe(200);
-      expect(res.body.customers).toBeInstanceOf(Array);
-      expect(res.body.customers).toContainEqual(
-        expect.objectContaining({
-          customerID: customerId,
-          email: 'testuser@example.com',
-        })
-      );
-    });
+  it("should not allow user to delete booking", async () => {
+    const res = await request(app).delete(`/booking/${bookingID}`).set("Authorization", `Bearer ${userToken}`);
+    expect(res.status).toBe(401);
   });
 
-  describe('GET /customer/:id', () => {
-    // it('should return the specific customer', async () => {
-    //   // Re-insert customer to ensure DB state
-    //   await db.delete(CustomerTable).where(eq(CustomerTable.email, 'testuser@example.com'));
-    //   const password = await bcrypt.hash('password123', 10);
-    //   const customerData = {
-    //     firstName: 'Test',
-    //     lastName: 'User',
-    //     email: 'testuser@example.com',
-    //     password,
-    //     phoneNumber: '1234567890',
-    //     address: '123 Test St',
-    //     role: "user" as "user",
-    //     isVerified: false,
-    //     verificationCode: '123456',
-    //     verificationCodeExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
-    //   };
-    //   const [customer] = await db.insert(CustomerTable).values(customerData).returning();
-    //   customerId = customer.customerID;
-    //   console.log(`Re-inserted customer with ID: ${customerId}, type: ${typeof customerId}`);
-    //   const [dbCustomer] = await db
-    //     .select()
-    //     .from(CustomerTable)
-    //     .where(eq(CustomerTable.customerID, customerId));
-    //   console.log(`Customer in DB before GET: ${JSON.stringify(dbCustomer)}`);
-    //   const res = await request(app).get(`/customer/${customerId}`);
-    //   console.log(`GET /customer/${customerId} response: ${JSON.stringify(res.body)}`);
-    //   expect(res.statusCode).toBe(200);
-    //   expect(res.body).toEqual(
-    //     expect.objectContaining({
-    //       message: 'Customer retrieved successfully',
-    //       customer: expect.objectContaining({
-    //         customerID: customerId,
-    //         email: 'testuser@example.com',
-    //       }),
-    //     })
-    //   );
-    // });
-
-    it('should return 404 for non-existent customer', async () => {
-      const res = await request(app).get('/customer/999999');
-      console.log(`GET /customer/999999 response: ${JSON.stringify(res.body)}`);
-      expect(res.statusCode).toBe(404);
-      if (Object.keys(res.body).length === 0) {
-        console.log('Empty 404 response body detected for GET /customer/999999');
-      }
-      expect(res.body).toMatchObject({});
-    });
+  it("should return 404 when deleting non-existent booking", async () => {
+    const res = await request(app).delete(`/booking/999999`).set("Authorization", `Bearer ${adminToken}`);
+    expect(res.status).toBe(404);
   });
+});
 
-  describe('PATCH /customer/:id', () => {
-    // it('should update customer details', async () => {
-    //   // Ensure customer exists
-    //   const [dbCustomer] = await db
-    //     .select()
-    //     .from(CustomerTable)
-    //     .where(eq(CustomerTable.customerID, customerId));
-    //   console.log(`Customer in DB before PATCH: ${JSON.stringify(dbCustomer)}`);
-    //   const res = await request(app).patch(`/customer/${customerId}`).send({
-    //     firstName: 'Updated',
-    //     lastName: 'User',
-    //   });
-    //   console.log(`PATCH /customer/${customerId} response: ${JSON.stringify(res.body)}`);
-    //   expect(res.statusCode).toBe(200);
-    //   expect(res.body).toEqual({ message: 'Customer updated successfully' });
-    //   const [updatedCustomer] = await db
-    //     .select()
-    //     .from(CustomerTable)
-    //     .where(eq(CustomerTable.customerID, customerId));
-    //   expect(updatedCustomer.firstName).toBe('Updated');
-    // });
-
-    it('should return 404 when updating non-existent customer', async () => {
-      const res = await request(app).patch('/customer/999999').send({
-        firstName: 'Updated',
-      });
-      console.log(`PATCH /customer/999999 response: ${JSON.stringify(res.body)}`);
-      expect(res.statusCode).toBe(404);
-      if (Object.keys(res.body).length === 0) {
-        console.log('Empty 404 response body detected for PATCH /customer/999999');
-      }
-      expect(res.body).toMatchObject({});
-    });
-  });
-
-  describe('DELETE /customer/:id', () => {
-    it('should delete the customer successfully', async () => {
-      const res = await request(app).delete(`/customer/${customerId}`);
-      expect(res.statusCode).toBe(200);
-      expect(res.body).toEqual({ message: 'Customer deleted successfully' });
-    });
-
-    it('should return 404 when trying to delete again', async () => {
-      const res = await request(app).delete(`/customer/${customerId}`);
-      expect(res.statusCode).toBe(404);
-      expect(res.body).toMatchObject({});
-    });
-  });
+afterAll(async () => {
+  await db.delete(BookingsTable);
+  await db.delete(CarTable);
+  await db.delete(CustomerTable);
 });

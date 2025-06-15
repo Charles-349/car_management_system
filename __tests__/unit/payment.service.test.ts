@@ -27,21 +27,37 @@ describe("Payment Service", () => {
   });
 
   describe("createPaymentService", () => {
-    it("should insert payment and return success message", async () => {
-      (db.insert as jest.Mock).mockReturnValueOnce({
-        values: jest.fn().mockResolvedValueOnce(undefined)
-      });
+  it("should insert payment and return created payment object", async () => {
+    (db.insert as jest.Mock).mockReturnValueOnce({
+      values: jest.fn().mockReturnValueOnce({
+        returning: jest.fn().mockResolvedValueOnce([
+          {
+            paymentID: 1,
+            bookingID: 1,
+            paymentDate: "2024-06-05",
+            amount: "250.00",
+            paymentMethod: "Credit Card"
+          }
+        ])
+      })
+    });
 
-      const result = await createPaymentService({
+    const result = await createPaymentService({
       bookingID: 1, 
       paymentDate: "2024-06-05", 
       amount: "250.00", 
       paymentMethod: "Credit Card"
-      });
+    });
 
-      expect(result).toBe("Payment created successfully");
+    expect(result).toEqual({
+      paymentID: 1,
+      bookingID: 1,
+      paymentDate: "2024-06-05",
+      amount: "250.00",
+      paymentMethod: "Credit Card"
     });
   });
+});
 
   describe("getPaymentsService", () => {
     it("should return all payments", async () => {
@@ -78,66 +94,85 @@ describe("Payment Service", () => {
   });
 
   describe("updatePaymentService", () => {
-    it("should update a payment and return success", async () => {
-      (db.update as jest.Mock).mockReturnValueOnce({
-        set: jest.fn().mockReturnValueOnce({
-          where: jest.fn().mockReturnValueOnce({
-            returning: jest.fn().mockResolvedValueOnce([{ paymentID: 1 }])
-          })
+  it("should update a payment and return the updated object", async () => {
+    (db.update as jest.Mock).mockReturnValueOnce({
+      set: jest.fn().mockReturnValueOnce({
+        where: jest.fn().mockReturnValueOnce({
+          returning: jest.fn().mockResolvedValueOnce([
+            {
+              paymentID: 1,
+              bookingID: 1,
+              paymentDate: "2024-06-05",
+              amount: "250.00",
+              paymentMethod: "Credit Card"
+            }
+          ])
         })
-      });
-
-      const result = await updatePaymentService(1, {
-      bookingID: 1, 
-      paymentDate: "2024-06-05", 
-      amount: "250.00", 
-      paymentMethod: "Credit Card"
-      });
-
-      expect(result).toBe("Payment updated successfully");
+      })
     });
 
-    it("should return null if no payment was updated", async () => {
-      (db.update as jest.Mock).mockReturnValueOnce({
-        set: jest.fn().mockReturnValueOnce({
-          where: jest.fn().mockReturnValueOnce({
-            returning: jest.fn().mockResolvedValueOnce([])
-          })
-        })
-      });
-
-      const result = await updatePaymentService(99, {
-     bookingID: 1, 
-      paymentDate: "2024-06-05", 
-      amount: "250.00", 
+    const result = await updatePaymentService(1, {
+      bookingID: 1,
+      paymentDate: "2024-06-05",
+      amount: "250.00",
       paymentMethod: "Credit Card"
-      });
+    });
 
-      expect(result).toBeNull();
+  
+    expect(result).toEqual({
+      paymentID: 1,
+      bookingID: 1,
+      paymentDate: "2024-06-05",
+      amount: "250.00",
+      paymentMethod: "Credit Card"
     });
   });
 
-  describe("deletePaymentService", () => {
-    it("should delete a payment and return success", async () => {
-      (db.delete as jest.Mock).mockReturnValueOnce({
-        where: jest.fn().mockReturnValueOnce({
-          returning: jest.fn().mockResolvedValueOnce([{ paymentID: 1 }])
-        })
-      });
-
-      const result = await deletePaymentService(1);
-      expect(result).toBe("Payment deleted successfully");
-    });
-
-    it("should return null if no payment was deleted", async () => {
-      (db.delete as jest.Mock).mockReturnValueOnce({
+  it("should return null if no payment was updated", async () => {
+    (db.update as jest.Mock).mockReturnValueOnce({
+      set: jest.fn().mockReturnValueOnce({
         where: jest.fn().mockReturnValueOnce({
           returning: jest.fn().mockResolvedValueOnce([])
         })
-      });
-
-      const result = await deletePaymentService(999);
-      expect(result).toBeNull();
+      })
     });
+
+    const result = await updatePaymentService(99, {
+      bookingID: 1,
+      paymentDate: "2024-06-05",
+      amount: "250.00",
+      paymentMethod: "Credit Card"
+    });
+
+    expect(result).toBeNull();
   });
 });
+
+  describe("deletePaymentService", () => {
+  it("should delete a payment and return the deleted payment object", async () => {
+    (db.delete as jest.Mock).mockReturnValueOnce({
+      where: jest.fn().mockReturnValueOnce({
+        returning: jest.fn().mockResolvedValueOnce([{ paymentID: 1 }])
+      })
+    });
+
+    const result = await deletePaymentService(1);
+
+   
+    expect(result).toEqual({ paymentID: 1 });
+  });
+
+  it("should return null if no payment was deleted", async () => {
+    (db.delete as jest.Mock).mockReturnValueOnce({
+      where: jest.fn().mockReturnValueOnce({
+        returning: jest.fn().mockResolvedValueOnce([])
+      })
+    });
+
+    const result = await deletePaymentService(999);
+    expect(result).toBeNull();
+  });
+}); 
+
+}
+);

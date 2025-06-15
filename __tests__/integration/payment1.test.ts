@@ -63,7 +63,7 @@ describe("Payment API", () => {
     const res = await request(app).post("/payment").send({
       bookingID: bookingId,
       amount: "200.00",
-      // Missing paymentDate and paymentMethod
+ 
     });
 
     expect(res.statusCode).toBe(500);
@@ -86,7 +86,7 @@ describe("Payment API", () => {
 
   it("should return 404 if no payments exist", async () => {
     const res = await request(app).get("/payment");
-    expect(res.statusCode === 200 || res.statusCode === 404).toBeTruthy(); // both acceptable based on controller
+    expect(res.statusCode === 200 || res.statusCode === 404).toBeTruthy(); 
   });
 
   it("should get a payment by ID", async () => {

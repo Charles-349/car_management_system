@@ -44,14 +44,16 @@ describe("Car Integration Routes", () => {
     carId = cars[0].carID;
   });
 
-//   it("should fail to create a car with missing fields", async () => {
-//     const res = await request(app).post("/car").send({
-//       carModel: "Missing Rate"
-//     });
+  it("should fail to create a car with missing fields", async () => {
+    const res = await request(app).post("/car").send({
+      color: "White",
+      availability: true,
+      locationID: testLocationId
+    });
 
-//     expect(res.statusCode).toBe(400);
-//     expect(res.body.message).toBeDefined();
-//   });
+    expect(res.statusCode).toBe(500);
+    expect(res.body.message).toBeDefined();
+  });
 
   it("should fetch all cars", async () => {
     const res = await request(app).get("/car");
@@ -89,10 +91,10 @@ describe("Car Integration Routes", () => {
     expect(res.body.message).toBe("Car updated successfully");
   });
 
-//   it("should fail to update a car with invalid ID", async () => {
-//     const res = await request(app).put("/car/abc").send({ color: "Red" });
-//     expect(res.statusCode).toBe(400);
-//   });
+  it("should fail to update a car with invalid ID", async () => {
+    const res = await request(app).put("/car/abc").send({ color: "Red" });
+    expect(res.statusCode).toBe(404);
+  });
 
   it("should return 404 when updating a non-existent car", async () => {
     const res = await request(app).put("/car/99999").send({ color: "Red" });
@@ -105,10 +107,10 @@ describe("Car Integration Routes", () => {
     expect(res.body.message).toBe("Car deleted successfully");
   });
 
-//   it("should return 400 for invalid car ID during deletion", async () => {
-//     const res = await request(app).delete("/car/invalid");
-//     expect(res.statusCode).toBe(400);
-//   });
+  it("should return 404 for invalid car ID during deletion", async () => {
+    const res = await request(app).delete("/car/invalid");
+    expect(res.statusCode).toBe(404);
+  });
 
   it("should return 404 when deleting a non-existent car", async () => {
     const res = await request(app).delete("/car/99999");

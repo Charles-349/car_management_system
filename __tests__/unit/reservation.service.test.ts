@@ -104,46 +104,48 @@ describe("Reservation Service", () => {
   });
 
   describe("updateReservationService", () => {
-    it("should update a reservation and return success message", async () => {
-      (db.update as jest.Mock).mockReturnValueOnce({
-        set: jest.fn().mockReturnValueOnce({
-          where: jest.fn().mockReturnValueOnce({
-            returning: jest.fn().mockResolvedValueOnce([{ reservationID: 1 }])
-          })
+  it("should update a reservation and return the updated reservation object", async () => {
+    (db.update as jest.Mock).mockReturnValueOnce({
+      set: jest.fn().mockReturnValueOnce({
+        where: jest.fn().mockReturnValueOnce({
+          returning: jest.fn().mockResolvedValueOnce([{ reservationID: 1 }])
         })
-      });
-
-      const result = await updateReservationService(1, {
-        customerID: 1, 
-       carID: 1, 
-       reservationDate: "2024-06-01", 
-       pickupDate: "2024-06-05", 
-       returnDate: "2024-06-10"
-      });
-
-      expect(result).toBe("Reservation updated successfully");
+      })
     });
 
-    it("should return null if no reservation was updated", async () => {
-      (db.update as jest.Mock).mockReturnValueOnce({
-        set: jest.fn().mockReturnValueOnce({
-          where: jest.fn().mockReturnValueOnce({
-            returning: jest.fn().mockResolvedValueOnce([])
-          })
-        })
-      });
-
-      const result = await updateReservationService(1, {
-       customerID: 1, 
-       carID: 1, 
-       reservationDate: "2024-06-01", 
-       pickupDate: "2024-06-05", 
-       returnDate: "2024-06-10"
-      });
-
-      expect(result).toBeNull();
+    const result = await updateReservationService(1, {
+      customerID: 1,
+      carID: 1,
+      reservationDate: "2024-06-01",
+      pickupDate: "2024-06-05",
+      returnDate: "2024-06-10"
     });
+
+    
+    expect(result).toEqual({ reservationID: 1 });
   });
+
+  it("should return null if no reservation was updated", async () => {
+    (db.update as jest.Mock).mockReturnValueOnce({
+      set: jest.fn().mockReturnValueOnce({
+        where: jest.fn().mockReturnValueOnce({
+          returning: jest.fn().mockResolvedValueOnce([])
+        })
+      })
+    });
+
+    const result = await updateReservationService(1, {
+      customerID: 1,
+      carID: 1,
+      reservationDate: "2024-06-01",
+      pickupDate: "2024-06-05",
+      returnDate: "2024-06-10"
+    });
+
+    expect(result).toBeNull();
+  });
+});
+
 
   describe("deleteReservationService", () => {
     it("should delete a reservation and return success message", async () => {
